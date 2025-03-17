@@ -1,4 +1,3 @@
-const { log } = require("console");
 const readline = require("readline");
 
 const leitor = readline.createInterface({
