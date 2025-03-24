@@ -3,8 +3,30 @@ const { createServer } = require("node:http");
 const hostname = "127.0.0.1";
 const port = "3000";
 
-function getRawValues(value) {
-	console.log(value);
+function sugestion(price, currency) {
+	if (currency == "usd" && price > 0) {
+		if (price < 60000) {
+			return "Bom momento para compra!";
+		}
+		else if (price > 60000 && price < 80000) {
+			return "Preco razoavel, avalie antes de comprar";
+		}
+		else {
+			return "Bitcoin esta caro. Pode ser melhor esperar!";
+		}
+	}
+	else if (currency == "brl" && price > 0) {
+		if (price < 300000) {
+			return "Bom momento para compra!";
+		}
+		else if (price > 300000 && price < 450000) {
+			return "Preco razoavel, avalie antes de comprar";
+		}
+		else {
+			return "Bitcoin esta caro. Pode ser melhor esperar!";
+		}
+	}
+	return "Valor invalido";
 }
 
 async function getValues() {
@@ -51,12 +73,16 @@ async function main() {
 				let splitedUrl = url.pathname.split("/");
 
 				if (splitedUrl[2].toLowerCase() == "brl") {
+					let veredict = sugestion(valueBRL, "brl");
+
 					res.statusCode = 200;
-					res.end(JSON.stringify({ btc_price: valueBRL, currency: "brl" }));
+					res.end(JSON.stringify({ btc_price: valueBRL, currency: "brl", sugestion: veredict }));
 				}
 				else if (splitedUrl[2].toLowerCase() == "usd") {
+					let veredict = sugestion(valueUSD, "usd");
+
 					res.statusCode = 200;
-					res.end(JSON.stringify({ btc_price: valueUSD, currency: "usd" }));
+					res.end(JSON.stringify({ btc_price: valueUSD, currency: "usd", sugestion: veredict }));
 				}
 				else {
 					res.statusCode = 400;
