@@ -19,7 +19,6 @@ class Institution extends Model {
 
 		return this;
 	}
-
 };
 
 export default Institution;

@@ -2,8 +2,10 @@ import Sequelize from 'sequelize';
 import databaseConfig from '../config/database';
 
 import Institution from '../app/models/Institution.js';
+import User from '../app/models/User.js';
+import Account from '../app/models/Account.js';
 
-const models = [Institution];
+const models = [Institution, User, Account];
 
 class Database {
 	constructor() {
@@ -14,7 +16,7 @@ class Database {
 		this.connection = new Sequelize(databaseConfig); //this will take our postgres connection config and sequlize it
 
 		models.map(model => model.init(this.connection));
-		//there will probably be an association line here
+		models.map(model => model.associate && model.associate(this.connection.models));
 	}
 
 }
