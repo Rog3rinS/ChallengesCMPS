@@ -21,7 +21,7 @@ class Account extends Model {
 
 	static associate(models) {
 		this.belongsTo(models.User, { foreignKey: "cpf", targetKey: "cpf" });
-		this.belongsTo(models.Institution, { foreignKey: "instituiton_id" });
+		this.belongsTo(models.Institution, { foreignKey: "institution_id", as: "institution" });
 	}
 };
 

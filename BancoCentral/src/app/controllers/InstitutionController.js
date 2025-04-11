@@ -12,24 +12,20 @@ class InstitutionController {
 			return res.status(400).json({ error: 'Falha na validação.' });
 		};
 
-		const name = req.body.name.toLowerCase();
-		const type = req.body.type.toLowerCase();
-
 		const institutionExists = await Institution.findOne({
-			where: { name: name }
-		});
+			where: { name: req.body.name.toLowerCase() },
+		})
 
 		if (institutionExists) {
 			return res.status(400).json({ error: 'Instituição já existe.' });
 		}
 
-		const { id } = await Institution.create(req.body.toLowerCase());
-
-		return res.json({
-			id,
-			name,
-			type,
+		const institution = await Institution.create({
+			name: req.body.name.toLowerCase(),
+			type: req.body.type.toLowerCase(),
 		});
+
+		return res.status(201).json(institution);
 	}
 
 	async delete(req, res) {
