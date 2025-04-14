@@ -18,8 +18,13 @@ routes.delete('/usuarios/:cpf', UserController.delete);
 
 //Accounts
 routes.post('/usuarios/:cpf/contas', AccountController.store);
+routes.get('/usuarios/:cpf/contas', AccountController.index);
 
 //Transactions
 routes.post('/usuarios/:cpf/transacoes', TransactionController.store);
+routes.get('/usuarios/:cpf/extrato', TransactionController.index);
+
+//Balance
+routes.get('/usuarios/:cpf/saldo', UserController.getBalance);
 
 export default routes;

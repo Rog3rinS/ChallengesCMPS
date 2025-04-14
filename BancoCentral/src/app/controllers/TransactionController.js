@@ -1,9 +1,71 @@
 import * as Yup from 'yup';
+import { Op } from "sequelize";
 import Transaction from '../models/Transaction';
 import Account from '../models/Account';
 import Institution from '../models/Institution';
 
 class TransactionController {
+	async index(req, res) {
+		//for the moment this shit return the id of the account, after i will make it the name and cpf
+		const institution = req.query.instituicao;
+
+		if (institution) {
+			const instituicao = await Institution.findOne({
+				where: { name: req.query.instituicao },
+			});
+
+			if (!instituicao) {
+				return res.status(400).json({ error: 'Instituicao nao encontrada.' });
+			}
+
+			const account = await Account.findOne({
+				where: {
+					cpf: req.params.cpf,
+					institution_id: instituicao.id,
+				},
+			});
+
+			if (!account) {
+				return res.status(400).json({ error: 'Conta não existe.' });
+			}
+
+			const transaction = await Transaction.findAll({
+				where: {
+					[Op.or]: [ //pegando as transacoes que o id e origin ou destination
+						{ origin_account_id: account.id },
+						{ destination_account_id: account.id },
+					],
+				},
+				order: [["created_at", "DESC"]],
+			});
+
+			return res.json(transaction);
+		}
+		else {
+			const account = await Account.findOne({
+				where: {
+					cpf: req.params.cpf,
+				},
+			});
+
+			if (!account) {
+				return res.status(400).json({ error: 'Conta não existe.' });
+			}
+
+			const transaction = await Transaction.findAll({
+				where: {
+					[Op.or]: [ //pegando as transacoes que o id e origin ou destination
+						{ origin_account_id: account.id },
+						{ destination_account_id: account.id },
+					],
+				},
+				order: [["created_at", "DESC"]],
+			});
+
+			return res.json(transaction);
+		}
+	}
+
 	async store(req, res) {
 		const schema = Yup.object().shape({
 			type: Yup.string().oneOf(["deposito", "saque", "transferencia"]).required(),

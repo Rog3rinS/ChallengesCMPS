@@ -1,5 +1,7 @@
 import * as Yup from 'yup';
 import User from '../models/User';
+import Account from '../models/Account';
+import Institution from '../models/Institution';
 
 class UserController {
 	async index(req, res) {
@@ -63,6 +65,61 @@ class UserController {
 
 		await user.destroy();
 		return res.send();
+	}
+
+	async getBalance(req, res) {
+		const institution = req.query.instituicao;
+
+		if (institution) {
+			const instituicao = await Institution.findOne({
+				where: { name: req.query.instituicao },
+			});
+
+			if (!instituicao) {
+				return res.status(400).json({ error: 'Instituicao nao encontrada.' });
+			}
+
+			const accounts = await Account.findAll({
+				where: {
+					cpf: req.params.cpf,
+					institution_id: instituicao.id,
+				},
+			});
+
+			if (accounts.length === 0) {
+				return res.status(400).json({ error: 'Conta não existe.' });
+			}
+
+			let totalBalance = 0;
+
+			for (let index = 0; index < accounts.length; index++) {
+				totalBalance += accounts[index].balance;
+			}
+
+			return res.json({
+				totalBalance,
+			});
+		}
+		else {
+			const accounts = await Account.findAll({
+				where: { cpf: req.params.cpf }
+			})
+
+			if (!accounts) {
+				return res.status(400).json({ error: 'Conta não existe.' });
+			}
+
+			let totalBalance = 0;
+
+			for (let index = 0; index < accounts.length; index++) {
+				totalBalance += accounts[index].balance;
+			}
+
+			return res.json({
+				totalBalance,
+			});
+		}
+
 	}
 }
 

@@ -3,6 +3,34 @@ import Institution from '../models/Institution';
 import Account from '../models/Account';
 
 class AccountController {
+	async index(req, res) {
+		const institution = req.query.instituicao;
+
+		if (!institution) {
+			return res.status(400).json({ error: 'Parametro "?instituicao=" e obrigatorio.' });
+		}
+
+		const instituicao = await Institution.findOne({
+			where: { name: req.query.instituicao },
+		});
+
+		if (!instituicao) {
+			return res.status(400).json({ error: 'Instituicao nao encontrada.' });
+		}
+		const account = await Account.findAll({
+			where: {
+				cpf: req.params.cpf,
+				institution_id: instituicao.id,
+			}
+		})
+
+		if (account.length === 0) {
+			return res.status(400).json({ error: 'Conta não existe.' });
+		}
+
+		return res.json(account);
+	}
+
 	async store(req, res) {
 		const schema = Yup.object().shape({
 			institution_name: Yup.string().required(),
