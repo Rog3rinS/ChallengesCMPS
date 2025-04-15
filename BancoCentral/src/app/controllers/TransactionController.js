@@ -2,6 +2,7 @@ import * as Yup from 'yup';
 import { Op } from "sequelize";
 import Transaction from '../models/Transaction';
 import Account from '../models/Account';
+import User from '../models/User';
 import Institution from '../models/Institution';
 
 class TransactionController {
@@ -39,7 +40,52 @@ class TransactionController {
 				order: [["created_at", "DESC"]],
 			});
 
-			return res.json(transaction);
+			const response = [];
+
+			for (const tx of transaction) {
+				const originAccount = await Account.findByPk(tx.origin_account_id);
+				if (!originAccount) {
+					console.log(`Conta com o origin id ${tx.origin_account_id} nao encontrada.`);
+					continue;
+				}
+
+				const originUser = await User.findOne({ where: { cpf: originAccount.cpf } });
+				const originInstitution = await Institution.findByPk(originAccount.institution_id);
+
+				let destinationAccount = null;
+				let destinationUser = null;
+				let destinationInstitution = null;
+
+				if (tx.destination_account_id) {
+					destinationAccount = await Account.findByPk(tx.destination_account_id);
+
+					if (destinationAccount) {
+						destinationUser = await User.findOne({ where: { cpf: destinationAccount.cpf } });
+						destinationInstitution = await Institution.findByPk(destinationAccount.institution_id);
+					}
+				}
+
+				response.push({
+					transference_id: tx.id,
+					tipo: tx.type,
+					valor: tx.amount,
+					data: tx.created_at,
+					movimentacao: tx.origin_account_id === account.id ? "saida" : "entrada",
+					origin: {
+						name: originUser?.name || "Origin user nao encontrado",
+						cpf: originUser?.cpf || "CPF nao encontrado",
+						institution: originInstitution?.name || "Instituicao nao encontrada",
+					},
+					destination: tx.type === "transferencia" && destinationUser
+						? {
+							name: destinationUser.name,
+							cpf: destinationUser.cpf,
+							institution: destinationInstitution?.name || "Instituicao nao encontrada",
+						}
+						: null,
+				});
+			}
+			return res.json(response);
 		}
 		else {
 			const account = await Account.findOne({
