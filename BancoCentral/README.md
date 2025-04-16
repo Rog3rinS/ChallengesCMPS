@@ -37,10 +37,16 @@ npm install
 ### 4. Inicie o ambiente com Docker
 
 ```bash
-docker compose up -d
+sudo docker compose up -d
 ```
 
-### 5. Execute o projeto usando o script
+### 5. Rode as migration
+
+```bash
+npx sequelize-cli db:migrate
+```
+
+### 6. Execute o projeto usando o script
 
 ```bash
 npm run dev
