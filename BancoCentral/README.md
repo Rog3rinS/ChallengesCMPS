@@ -51,3 +51,107 @@ npx sequelize-cli db:migrate
 ```bash
 npm run dev
 ```
+
+## 📘 Guia de Uso da API
+
+Após iniciar o servidor, a API estará disponível em `http://localhost:8989`.
+
+---
+
+### 🔐 1. Criar um Usuário
+
+**Endpoint**
+
+`POST /usuarios`
+
+**Corpo da requisição**
+
+```json
+{
+  "cpf": "12345678900",
+  "name": "João Silva",
+  "email": "joao@example.com"
+}
+```
+
+### 🔎 2. Consultar Usuário por CPF
+
+**Endpoint**
+
+`GET /usuarios/:cpf`
+
+### ✏️ 3. Atualizar Usuário
+
+**Endpoint**
+
+`PUT /usuarios/:cpf`
+
+**Corpo da requisição**
+
+```json
+{
+  "cpf": "12345678900",
+  "name": "João Silva Atualizado",
+  "email": "joao.novo@example.com"
+}
+```
+
+### 🗑️ 4. Deletar Usuário
+
+**Endpoint**
+
+`DELETE /usuarios/:cpf`
+
+---
+
+### 🏛️ 5. Criar Instituição
+
+**Endpoint**
+
+`POST /instituicao`
+
+**Corpo da requisição**
+
+```json
+{
+  "name": "Banco do Brasil",
+  "type": "Banco"
+}
+```
+
+### 🗑️ 6. Deletar Instituição
+
+**Endpoint**
+
+`DELETE /instituicao/:id`
+
+---
+
+### 💳 7. Criar Conta para Usuário
+
+**Endpoint**
+
+`POST /usuarios/:cpf/contas`
+
+**Corpo da requisição**
+
+```json
+{
+  "institution_name": "Banco do Brasil",
+  "type": "Banco"
+}
+```
+
+### 🔎 8. Consultar Contas de Usuário por Instituição
+
+**Endpoint**
+
+`GET /usuarios/:cpf/contas?instituicao=`
+
+**Parâmetros de consulta**
+
+- `instituicao=` – O nome da instituição para filtrar as contas.
+
+**Exemplo:**
+
+`GET /usuarios/:cpf/contas?instituicao=Bradesco`
