@@ -31,7 +31,7 @@ class TransactionController {
 
 			const transaction = await Transaction.findAll({
 				where: {
-					[Op.or]: [ //pegando as transacoes que o id e origin ou destination
+					[Op.or]: [
 						{ origin_account_id: account.id },
 						{ destination_account_id: account.id },
 					],
@@ -43,10 +43,7 @@ class TransactionController {
 
 			for (const tx of transaction) {
 				const originAccount = await Account.findByPk(tx.origin_account_id);
-				if (!originAccount) {
-					console.log(`Conta com o origin id ${tx.origin_account_id} nao encontrada.`);
-					continue;
-				}
+				if (!originAccount) continue;
 
 				const originUser = await User.findOne({ where: { cpf: originAccount.cpf } });
 				const originInstitution = await Institution.findByPk(originAccount.institution_id);
@@ -85,8 +82,7 @@ class TransactionController {
 				});
 			}
 			return res.json(response);
-		}
-		else {
+		} else {
 			const accounts = await Account.findOne({
 				where: {
 					cpf: req.params.cpf,
@@ -111,10 +107,7 @@ class TransactionController {
 
 			for (const tx of transaction) {
 				const originAccount = await Account.findByPk(tx.origin_account_id);
-				if (!originAccount) {
-					console.log(`Conta com o origin id ${tx.origin_account_id} não encontrada.`);
-					continue;
-				}
+				if (!originAccount) continue;
 
 				const originUser = await User.findOne({ where: { cpf: originAccount.cpf } });
 				const originInstitution = await Institution.findByPk(originAccount.institution_id);
@@ -137,7 +130,7 @@ class TransactionController {
 					tipo: tx.type,
 					valor: tx.amount,
 					data: tx.created_at,
-					movimentacao: tx.origin_account_id === account.id ? 'saida' : 'entrada',
+					movimentacao: tx.origin_account_id === accounts.id ? 'saida' : 'entrada',
 					origin: {
 						name: originUser?.name || 'Origin user não encontrado',
 						cpf: originUser?.cpf || 'CPF não encontrado',
@@ -159,39 +152,56 @@ class TransactionController {
 
 	async store(req, res) {
 		const schema = Yup.object().shape({
-			type: Yup.string().oneOf(["deposito", "saque", "transferencia"]).required(),
-			amount: Yup.number().positive().required(),
-			destination_cpf: Yup.string().min(11).max(11),
+			type: Yup.string()
+				.oneOf(["deposito", "saque", "transferencia"])
+				.required(),
+			amount: Yup.number()
+				.positive()
+				.required(),
+			destination_cpf: Yup.string()
+				.min(11)
+				.max(11)
+				.when("type", {
+					is: "transferencia",
+					then: (schema) => schema.required(),
+					otherwise: (schema) => schema.notRequired(),
+				}),
+			institution_name_origin: Yup.string().required(),
+			institution_name: Yup.string().when("type", {
+				is: "transferencia",
+				then: (schema) => schema.required(),
+				otherwise: (schema) => schema.notRequired(),
+			}),
 		});
 
 		if (!(await schema.isValid(req.body))) {
 			return res.status(400).json({ error: 'Falha na validação.' });
 		}
 
-		const { type, amount, destination_cpf } = req.body;
+		const { type, amount, destination_cpf, institution_name_origin, institution_name } = req.body;
 		const origin_cpf = req.params.cpf;
 
-		console.log(origin_cpf);
+		const originInstitution = await Institution.findOne({ where: { name: institution_name_origin } });
 
-		if (type == "transferencia" && !destination_cpf) {
-			return res.status(400).json({ error: 'CPF de destino e obrigatorio ao realizar uma transferencia.' });
+		if (!originInstitution) {
+			return res.status(404).json({ error: 'Instituição de origem não encontrada.' });
 		}
 
-		// Verificando se a conta de origem existe
 		const originAccount = await Account.findOne({
-			where: { cpf: origin_cpf }
+			where: {
+				cpf: origin_cpf,
+				institution_id: originInstitution.id,
+			},
 		});
 
 		if (!originAccount) {
-			return res.status(400).json({ error: 'Conta de origem nao existe.' });
+			return res.status(400).json({ error: 'Conta de origem não encontrada.' });
 		}
 
-		// Verificando se e handling errors em caso de transferencia
 		let destinationAccount = null;
 
 		if (type === "transferencia") {
 			destinationAccount = await Account.findOne({ where: { cpf: destination_cpf } });
-
 			if (!destinationAccount) {
 				return res.status(404).json({ error: 'Conta de destino não encontrada.' });
 			}
@@ -199,22 +209,29 @@ class TransactionController {
 			if (origin_cpf === destination_cpf) {
 				return res.status(400).json({ error: 'Transferência para a mesma conta não é permitida.' });
 			}
+
+			const destinationInstitution = await Institution.findOne({ where: { name: institution_name } });
+
+			if (!destinationInstitution) {
+				return res.status(404).json({ error: 'Instituição de destino não encontrada.' });
+			}
+
+			if (destinationAccount.institution_id !== destinationInstitution.id) {
+				return res.status(400).json({ error: 'A conta de destino não pertence à instituição informada.' });
+			}
 		}
 
 		if ((type === "saque" || type === "transferencia") && originAccount.balance < amount) {
 			return res.status(400).json({ error: 'Saldo insuficiente.' });
 		}
 
-		// Handling de saldos
 		if (type === "saque") {
 			originAccount.balance -= amount;
-			await originAccount.save(); //valida a alteracao no banco de dados
-		}
-		else if (type === "deposito") {
+			await originAccount.save();
+		} else if (type === "deposito") {
 			originAccount.balance += amount;
 			await originAccount.save();
-		}
-		else if (type === "transferencia") {
+		} else if (type === "transferencia") {
 			originAccount.balance -= amount;
 			destinationAccount.balance += amount;
 			await originAccount.save();
@@ -227,22 +244,33 @@ class TransactionController {
 				amount,
 				origin_account_id: originAccount.id,
 				destination_account_id: destinationAccount ? destinationAccount.id : null,
-				instituiton_id: originAccount.institution_id,
+				institution_id: originAccount.institution_id,
+				destination_institution_id: destinationAccount ? destinationAccount.institution_id : null,
 			});
 
 			const fullTransaction = await Transaction.findByPk(transaction.id, {
-				include: {
-					model: Account,
-					as: "origin_account",
-					include: {
-						model: Institution,
-						as: "institution",
-						attributes: ["name"],
+				include: [
+					{
+						model: Account,
+						as: "origin_account",
+						include: {
+							model: Institution,
+							as: "institution",
+							attributes: ["name"],
+						},
 					},
-				},
+					{
+						model: Account,
+						as: "destination_account",
+						include: {
+							model: Institution,
+							as: "institution",
+							attributes: ["name"],
+						},
+					},
+				],
 			});
 
-			//shit got so messy, i needed to build a response
 			const response = {
 				id: fullTransaction.id,
 				type: fullTransaction.type,
@@ -256,11 +284,20 @@ class TransactionController {
 						name: fullTransaction.origin_account.institution.name,
 					},
 				},
+				destination_account: fullTransaction.destination_account
+					? {
+						cpf: fullTransaction.destination_account.cpf,
+						institution: {
+							name: fullTransaction.destination_account.institution.name,
+						},
+					}
+					: null,
 			};
+
 			return res.status(201).json(response);
 		} catch (err) {
 			console.error('Transaction creation error:', err);
-			return res.status(400).json({ error: 'Failed to create transaction.' });
+			return res.status(400).json({ error: 'Falha ao criar transação.' });
 		}
 	}
 }

@@ -25,7 +25,7 @@ class UserController {
 		}
 
 		const userExists = await User.findOne({
-			where: { email: req.body.cpf },
+			where: { cpf: req.body.cpf },
 		});
 
 		if (userExists) {
