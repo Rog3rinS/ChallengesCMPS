@@ -155,3 +155,31 @@ Após iniciar o servidor, a API estará disponível em `http://localhost:8989`.
 **Exemplo:**
 
 `GET /usuarios/:cpf/contas?instituicao=Bradesco`
+
+---
+
+### 💸 9. Realizar Transação
+
+**Endpoint**
+
+`POST /usuarios/:cpf/transacoes`
+
+**Corpo da requisição**
+
+```json
+{
+  "type": "transferencia",
+  "amount": 1,
+  "destination_cpf": "12345678912"
+}
+```
+
+### 📄 10. Consultar Extrato de Transações
+
+**Endpoint com filtro de instituicao**
+
+`GET /usuarios/:cpf/extrato?instituicao=` 
+
+**Endpoint sem filtro de instituicao**
+
+`GET /usuarios/:cpf/extrato` 
