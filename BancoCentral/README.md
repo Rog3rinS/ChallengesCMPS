@@ -137,7 +137,7 @@ Após iniciar o servidor, a API estará disponível em `http://localhost:8989`.
 
 ```json
 {
-  "institution_name": "Banco do Brasil",
+  "institution_name": "Bradesco",
   "type": "Banco"
 }
 ```
@@ -164,13 +164,36 @@ Após iniciar o servidor, a API estará disponível em `http://localhost:8989`.
 
 `POST /usuarios/:cpf/transacoes`
 
-**Corpo da requisição**
+`:cpf` - e o cpf de origem
+
+**Corpo da requisição para transferencia**
 
 ```json
 {
   "type": "transferencia",
   "amount": 1,
-  "destination_cpf": "12345678912"
+  "destination_cpf": "12345678912",
+  "institution_name_origin": "Bradesco",
+  "institution_name": "Itau"
+}
+```
+**Corpo da requisição para saque**
+
+```json
+{
+  "type": "saque",
+  "amount": 50,
+  "institution_name_origin": "Bradesco"
+}
+```
+
+**Corpo da requisição para deposito**
+
+```json
+{
+  "type": "deposito",
+  "amount": 100,
+  "institution_name_origin": "Bradesco"
 }
 ```
 
