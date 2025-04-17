@@ -66,7 +66,6 @@ class TransactionController {
 					tipo: tx.type,
 					valor: tx.amount,
 					data: tx.created_at,
-					movimentacao: tx.origin_account_id === account.id ? "saida" : "entrada",
 					origin: {
 						name: originUser?.name || "Origin user nao encontrado",
 						cpf: originUser?.cpf || "CPF nao encontrado",
@@ -130,7 +129,6 @@ class TransactionController {
 					tipo: tx.type,
 					valor: tx.amount,
 					data: tx.created_at,
-					movimentacao: tx.origin_account_id === accounts.id ? 'saida' : 'entrada',
 					origin: {
 						name: originUser?.name || 'Origin user não encontrado',
 						cpf: originUser?.cpf || 'CPF não encontrado',

@@ -54,8 +54,6 @@ class AccountController {
 			return res.status(400).json({ error: 'Instituicao nao encontrada.' });
 		}
 
-
-		// Check if count already exists
 		const accountExist = await Account.findOne({
 			where: {
 				cpf,
